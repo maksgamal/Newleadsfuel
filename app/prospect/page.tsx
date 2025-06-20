@@ -1,18 +1,34 @@
 'use client'
 
 import { useState } from 'react'
+import { ContactUnlockModal } from '@/components/features/contact-unlock-modal'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, Filter, Users, Building } from 'lucide-react'
+import { Search, Filter, Building, MapPin, Mail, Phone, Plus } from 'lucide-react'
+
+interface Contact {
+  id: number
+  name: string
+  title: string
+  company: string
+  location: string
+  industry: string
+  hasEmail: boolean
+  hasPhone: boolean
+  unlockedEmail?: string
+  unlockedPhone?: string
+}
 
 export default function ProspectPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [unlockType, setUnlockType] = useState<'email' | 'phone' | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
 
   // Mock data for demonstration
-  const mockResults = [
+  const [mockResults, setMockResults] = useState<Contact[]>([
     {
       id: 1,
       name: 'John Smith',
@@ -43,7 +59,29 @@ export default function ProspectPage() {
       hasEmail: false,
       hasPhone: true,
     },
-  ]
+  ])
+
+  const handleUnlock = (contact: Contact, type: 'email' | 'phone') => {
+    setSelectedContact(contact)
+    setUnlockType(type)
+    setModalOpen(true)
+  }
+
+  const handleUnlockSuccess = (data: { email?: string; phone?: string }) => {
+    if (selectedContact) {
+      setMockResults(prev => 
+        prev.map(contact => 
+          contact.id === selectedContact.id 
+            ? { 
+                ...contact, 
+                unlockedEmail: data.email || contact.unlockedEmail,
+                unlockedPhone: data.phone || contact.unlockedPhone
+              }
+            : contact
+        )
+      )
+    }
+  }
 
   return (
     <div className="p-6">
@@ -141,29 +179,64 @@ export default function ProspectPage() {
                           <Badge variant="secondary">{result.industry}</Badge>
                         </div>
                         <p className="text-gray-600 mb-1">{result.title}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
                           <span className="flex items-center gap-1">
                             <Building className="h-4 w-4" />
                             {result.company}
                           </span>
-                          <span>{result.location}</span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {result.location}
+                          </span>
                         </div>
+                        
+                        {/* Display unlocked data */}
+                        {result.unlockedEmail && (
+                          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-2 py-1 rounded mb-1">
+                            <Mail className="h-4 w-4" />
+                            {result.unlockedEmail}
+                          </div>
+                        )}
+                        {result.unlockedPhone && (
+                          <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                            <Phone className="h-4 w-4" />
+                            {result.unlockedPhone}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex flex-col gap-2">
                         <Button
                           size="sm"
-                          variant={result.hasEmail ? "default" : "outline"}
-                          disabled={!result.hasEmail}
+                          variant={result.hasEmail && !result.unlockedEmail ? "default" : "outline"}
+                          disabled={!result.hasEmail || !!result.unlockedEmail}
+                          onClick={() => handleUnlock(result, 'email')}
                         >
-                          {result.hasEmail ? 'Unlock Email (2 credits)' : 'Email Unavailable'}
+                          {result.unlockedEmail ? (
+                            'Email Unlocked'
+                          ) : result.hasEmail ? (
+                            'Unlock Email (2 credits)'
+                          ) : (
+                            'Email Unavailable'
+                          )}
                         </Button>
                         <Button
                           size="sm"
-                          variant={result.hasPhone ? "default" : "outline"}
-                          disabled={!result.hasPhone}
+                          variant={result.hasPhone && !result.unlockedPhone ? "default" : "outline"}
+                          disabled={!result.hasPhone || !!result.unlockedPhone}
+                          onClick={() => handleUnlock(result, 'phone')}
                         >
-                          {result.hasPhone ? 'Unlock Phone (5 credits)' : 'Phone Unavailable'}
+                          {result.unlockedPhone ? (
+                            'Phone Unlocked'
+                          ) : result.hasPhone ? (
+                            'Unlock Phone (5 credits)'
+                          ) : (
+                            'Phone Unavailable'
+                          )}
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add to List
                         </Button>
                       </div>
                     </div>
@@ -174,6 +247,14 @@ export default function ProspectPage() {
           </Card>
         </div>
       </div>
+
+      <ContactUnlockModal
+        contact={selectedContact}
+        type={unlockType}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={handleUnlockSuccess}
+      />
     </div>
   )
 }

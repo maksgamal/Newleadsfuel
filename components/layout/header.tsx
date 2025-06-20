@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/use-auth'
+import { useCredits } from '@/hooks/use-credits'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,11 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { Bell, CreditCard, Settings, LogOut } from 'lucide-react'
+import { Bell, CreditCard, Settings, LogOut, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 export function Header() {
   const { user, signOut } = useAuth()
+  const { balance } = useCredits()
+  const isLowBalance = balance < 20
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -31,7 +34,13 @@ export function Header() {
           {/* Credit Balance */}
           <div className="flex items-center space-x-2">
             <CreditCard className="h-4 w-4 text-gray-500" />
-            <Badge variant="secondary">150 credits</Badge>
+            <Badge 
+              variant={isLowBalance ? "destructive" : "secondary"}
+              className="flex items-center gap-1"
+            >
+              {isLowBalance && <AlertTriangle className="h-3 w-3" />}
+              {balance} credits
+            </Badge>
           </div>
 
           {/* Notifications */}

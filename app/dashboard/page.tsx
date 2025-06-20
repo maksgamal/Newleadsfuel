@@ -1,10 +1,11 @@
 'use client'
 
 import { useAuth } from '@/hooks/use-auth'
+import { CreditBalanceWidget } from '@/components/features/credit-balance-widget'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { User, CreditCard, Users, Activity, Search, Download, TrendingUp } from 'lucide-react'
+import { User, Users, Activity, Search, Download, TrendingUp, Mail, Phone } from 'lucide-react'
 import Link from 'next/link'
 
 export default function DashboardPage() {
@@ -18,18 +19,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Credit Balance</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">150</div>
-            <p className="text-xs text-muted-foreground">
-              +20 from last month
-            </p>
-          </CardContent>
-        </Card>
+        <CreditBalanceWidget />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -80,32 +70,67 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Email unlocked for John Doe</p>
-                  <p className="text-sm text-muted-foreground">2 credits used</p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <Mail className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Email unlocked for John Doe</p>
+                    <p className="text-sm text-muted-foreground">VP of Sales at TechCorp</p>
+                  </div>
                 </div>
-                <Badge variant="secondary">2 min ago</Badge>
+                <div className="text-right">
+                  <Badge variant="secondary">2 credits</Badge>
+                  <p className="text-xs text-muted-foreground mt-1">2 min ago</p>
+                </div>
               </div>
+              
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Added 5 leads to "Q1 Prospects"</p>
-                  <p className="text-sm text-muted-foreground">Bulk action</p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <Users className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Added 5 leads to "Q1 Prospects"</p>
+                    <p className="text-sm text-muted-foreground">Bulk action completed</p>
+                  </div>
                 </div>
-                <Badge variant="secondary">1 hour ago</Badge>
+                <div className="text-right">
+                  <Badge variant="outline">List Update</Badge>
+                  <p className="text-xs text-muted-foreground mt-1">1 hour ago</p>
+                </div>
               </div>
+              
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Phone unlocked for Jane Smith</p>
-                  <p className="text-sm text-muted-foreground">5 credits used</p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-full">
+                    <Phone className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Phone unlocked for Jane Smith</p>
+                    <p className="text-sm text-muted-foreground">Marketing Director at Growth Co</p>
+                  </div>
                 </div>
-                <Badge variant="secondary">3 hours ago</Badge>
+                <div className="text-right">
+                  <Badge variant="secondary">5 credits</Badge>
+                  <p className="text-xs text-muted-foreground mt-1">3 hours ago</p>
+                </div>
               </div>
+              
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Exported "Tech Leads" list</p>
-                  <p className="text-sm text-muted-foreground">CSV format</p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-full">
+                    <Download className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Exported "Tech Leads" list</p>
+                    <p className="text-sm text-muted-foreground">CSV format, 23 contacts</p>
+                  </div>
                 </div>
-                <Badge variant="secondary">Yesterday</Badge>
+                <div className="text-right">
+                  <Badge variant="outline">Export</Badge>
+                  <p className="text-xs text-muted-foreground mt-1">Yesterday</p>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -132,12 +157,12 @@ export default function DashboardPage() {
               </Link>
               <Link href="/billing">
                 <Button className="w-full justify-start" variant="outline">
-                  <CreditCard className="mr-2 h-4 w-4" />
+                  <TrendingUp className="mr-2 h-4 w-4" />
                   Purchase Credits
                 </Button>
               </Link>
               <Button className="w-full justify-start" variant="outline">
-                <TrendingUp className="mr-2 h-4 w-4" />
+                <Activity className="mr-2 h-4 w-4" />
                 View Analytics
               </Button>
             </div>
