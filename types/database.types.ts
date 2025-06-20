@@ -34,18 +34,56 @@ export type Database = {
     }
     public: {
         Tables: {
+            credit_transactions: {
+                Row: {
+                    id: string
+                    user_id: string
+                    type: string
+                    amount: number
+                    related_entity_id: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    type: string
+                    amount: number
+                    related_entity_id?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    type?: string
+                    amount?: number
+                    related_entity_id?: string | null
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "credit_transactions_user_id_fkey"
+                        columns: ["user_id"]
+                        isOneToOne: false
+                        referencedRelation: "customers"
+                        referencedColumns: ["id"]
+                    },
+                ]
+            }
             customers: {
                 Row: {
                     id: string
                     stripe_customer_id: string | null
+                    credit_balance: number | null
                 }
                 Insert: {
                     id: string
                     stripe_customer_id?: string | null
+                    credit_balance?: number | null
                 }
                 Update: {
                     id?: string
                     stripe_customer_id?: string | null
+                    credit_balance?: number | null
                 }
                 Relationships: []
             }
@@ -319,4 +357,3 @@ export type CompositeTypes<
     : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
