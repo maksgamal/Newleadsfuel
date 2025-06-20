@@ -2,7 +2,7 @@
 
 import Stripe from 'stripe';
 import { stripe } from '@/utils/stripe/config';
-import { createClerkSupabaseClientSsr } from '@/utils/supabase/server';
+import { createSupabaseServerClient } from '@/utils/supabase/server';
 import { createOrRetrieveCustomer, supabaseAdmin } from '@/utils/supabase/admin';
 import {
     getURL,
@@ -10,7 +10,6 @@ import {
     calculateTrialEndUnixTimestamp
 } from '@/utils/helpers';
 import { Tables } from '@/types/database.types';
-import { auth, currentUser } from '@clerk/nextjs/server';
 
 type Price = Tables<'prices'>;
 
@@ -22,13 +21,14 @@ export async function checkoutWithStripe(
 ) {
     try {
         // Get the user from Supabase auth
-        const user = await currentUser()
+        const supabase = await createSupabaseServerClient()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
         if (referralId) {
             console.log("checkout with referral id:", referralId)
         }
 
-        if (!user) {
+        if (!user || userError) {
             throw new Error('Could not get user session.');
         }
 
@@ -37,7 +37,7 @@ export async function checkoutWithStripe(
         try {
             customer = await createOrRetrieveCustomer({
                 uuid: user.id || '',
-                email: user?.primaryEmailAddress?.emailAddress || '',
+                email: user?.email || '',
                 referral: referralId
             });
         } catch (err) {
@@ -125,7 +125,7 @@ export async function checkoutWithStripe(
 
 export async function createStripePortal(currentPath: string) {
     try {
-        const supabase = await createClerkSupabaseClientSsr();
+        const supabase = await createSupabaseServerClient();
         const {
             error,
             data: { user }
@@ -184,12 +184,12 @@ export async function createStripePortal(currentPath: string) {
     }
 }
 
-
 export async function createBillingPortalSession() {
     try {
-        const user = await currentUser()
+        const supabase = await createSupabaseServerClient()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-        if (!user) {
+        if (!user || userError) {
             throw new Error("No User")
         }
 
