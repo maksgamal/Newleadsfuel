@@ -1,33 +1,30 @@
-import { auth } from '@clerk/nextjs/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
+import { cookies } from 'next/headers'
 
-export async function createClerkSupabaseClientSsr() {
-    // The `useAuth()` hook is used to access the `getToken()` method
-    const { getToken } = await auth()
+export async function createSupabaseServerClient() {
+    const cookieStore = await cookies()
 
     return createClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
-            global: {
-                // Get the custom Supabase token from Clerk
-                fetch: async (url, options = {}) => {
-                    const clerkToken = await getToken({
-                        template: 'supabase',
-                    })
-
-                    // Insert the Clerk Supabase token into the headers
-                    const headers = new Headers(options?.headers)
-                    headers.set('Authorization', `Bearer ${clerkToken}`)
-
-                    // Now call the default fetch
-                    return fetch(url, {
-                        ...options,
-                        headers,
-                    })
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            },
+            cookies: {
+                get(name: string) {
+                    return cookieStore.get(name)?.value
+                },
+                set(name: string, value: string, options: any) {
+                    cookieStore.set({ name, value, ...options })
+                },
+                remove(name: string, options: any) {
+                    cookieStore.set({ name, value: '', ...options })
                 },
             },
-        },
+        }
     )
 }

@@ -1,35 +1,68 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
-import { NextRequest, NextResponse } from "next/server"
+import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import type { Database } from '@/types/database.types'
 
-// Define protected routes that require authentication
-const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
-  '/prospector(.*)',
-  '/lists(.*)',
-  '/billing(.*)',
-  '/settings(.*)',
-  '/api/protected(.*)'
-])
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
 
-export default clerkMiddleware(async (auth, req) => {
-  // Protect routes that require authentication
-  if (isProtectedRoute(req)) {
-    const { userId } = await auth()
+  const supabase = createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      },
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: any) {
+          response.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
+
+  // Check if user is authenticated for protected routes
+  const protectedPaths = ['/dashboard']
+  const isProtectedPath = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  if (isProtectedPath) {
+    const { data: { session } } = await supabase.auth.getSession()
     
-    if (!userId) {
-      // Redirect to sign-in page if not authenticated
-      const signInUrl = new URL('/sign-in', req.url)
-      signInUrl.searchParams.set('redirect_url', req.url)
-      return NextResponse.redirect(signInUrl)
+    if (!session) {
+      const redirectUrl = new URL('/auth/signin', request.url)
+      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
-  return NextResponse.next()
-})
+  // Redirect authenticated users away from auth pages
+  const authPaths = ['/auth/signin', '/auth/signup']
+  const isAuthPath = authPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  if (isAuthPath) {
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (session) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  return response
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)|api/webhooks).*)",
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
