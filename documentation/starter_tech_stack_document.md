@@ -15,9 +15,13 @@ This starter kit uses the following tech stack:
      - Configuration in `tsconfig.json`
 
 2. **Authentication and User Management:**
-   - **Clerk**: Implemented via `@clerk/nextjs` for handling authentication and user management
-     - Middleware configuration in `middleware.ts`
-     - Provider configuration in `components/providers/clerk-client-provider.tsx`. Add provider to `app/layout.tsx` to start using clerk
+   - **Supabase Auth**: Native authentication system providing secure user management, session handling, and role-based access control
+     - Built-in email/password authentication
+     - Social OAuth providers support
+     - Row Level Security (RLS) integration
+     - JWT-based session management
+     - Password recovery and email verification
+     - Multi-factor authentication support
 
 3. **Database and Backend:**
    - **Supabase**: Used as the main database and backend service
@@ -28,6 +32,7 @@ This starter kit uses the following tech stack:
      - Database migrations: `supabase/migrations/`
      - Configuration: `supabase/config.toml`
    - Database schema includes tables for:
+     - users (via Supabase Auth)
      - customers
      - products
      - prices
@@ -49,7 +54,7 @@ This starter kit uses the following tech stack:
          return useQuery({
            queryKey: ['products'],
            queryFn: async () => {
-               // Example usage with Supabase client, you can also do any async request to a server here through fetch, axios, Nextjs server actions, etc.
+               // Example usage with Supabase client
                const supabase = useSupabase();
                
                const {data, error} = await supabase.from('products').select('*');
@@ -171,8 +176,9 @@ This starter kit uses the following tech stack:
     - General helpers: `utils/helpers.ts`
 
 The project is set up as a modern SaaS application with:
+- Native Supabase authentication with RLS
 - Full subscription management system
-- Secure authentication
+- Secure user management
 - Type-safe development
 - Modern UI components
 - Responsive design
@@ -181,4 +187,4 @@ The project is set up as a modern SaaS application with:
 - Database with proper security measures
 - Payment processing integration
 
-This tech stack provides a robust foundation for building a scalable, secure, and user-friendly web application with all the modern features expected in a professional SaaS product.
+This tech stack provides a robust foundation for building a scalable, secure, and user-friendly web application with all the modern features expected in a professional SaaS product, leveraging Supabase's native authentication system for seamless user management and security.
