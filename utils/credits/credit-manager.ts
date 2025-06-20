@@ -257,6 +257,41 @@ export class ClientCreditManager {
     const balance = await this.getCreditBalance()
     return balance >= requiredAmount
   }
+
+  /**
+   * Unlock contact data via Edge Function
+   */
+  async unlockContact(
+    contactId: string,
+    type: 'email' | 'phone',
+    contactData?: { name: string; company: string; title: string }
+  ): Promise<{ success: boolean; data?: any; error?: string; new_balance?: number }> {
+    try {
+      const { data: { session } } = await this.supabase.auth.getSession()
+      if (!session) {
+        return { success: false, error: 'Not authenticated' }
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/unlock-contact`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contactId,
+          type,
+          contactData
+        })
+      })
+
+      const result = await response.json()
+      return result
+    } catch (error) {
+      console.error('Error unlocking contact:', error)
+      return { success: false, error: 'Failed to unlock contact' }
+    }
+  }
 }
 
 /**

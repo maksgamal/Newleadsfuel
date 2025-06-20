@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useSupabase } from '@/utils/supabase/context'
 import { useAuth } from '@/hooks/use-auth'
+import { createClientCreditManager } from '@/utils/credits/credit-manager'
 
 interface CreditTransaction {
   id: string
   type: string
-  credits_used: number
+  amount: number
   contact_id?: number
   created_at: string
 }
@@ -27,60 +28,70 @@ export function useCredits() {
 
   const fetchCreditData = async () => {
     try {
-      // In a real app, you'd fetch from your users table
-      // For now, we'll use mock data
-      setBalance(150)
-      setTransactions([
-        {
-          id: '1',
-          type: 'unlock_email',
-          credits_used: 2,
-          contact_id: 123,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          type: 'unlock_phone',
-          credits_used: 5,
-          contact_id: 124,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-        },
+      const creditManager = createClientCreditManager()
+      
+      // Fetch balance and transactions in parallel
+      const [balance, transactions] = await Promise.all([
+        creditManager.getCreditBalance(),
+        creditManager.getCreditTransactions(10) // Get last 10 transactions
       ])
+
+      setBalance(balance)
+      setTransactions(transactions.map(t => ({
+        id: t.id,
+        type: t.type,
+        amount: Math.abs(t.amount), // Show positive amounts for display
+        contact_id: t.related_entity_id ? parseInt(t.related_entity_id) : undefined,
+        created_at: t.created_at
+      })))
     } catch (error) {
       console.error('Error fetching credit data:', error)
+      // Set default values on error
+      setBalance(0)
+      setTransactions([])
     } finally {
       setLoading(false)
     }
   }
 
-  const deductCredits = async (amount: number, type: string, contactId?: number) => {
+  const unlockContact = async (
+    contactId: string,
+    type: 'email' | 'phone',
+    contactData?: { name: string; company: string; title: string }
+  ) => {
     try {
-      // In a real app, you'd make an API call to deduct credits
-      setBalance(prev => Math.max(0, prev - amount))
+      const creditManager = createClientCreditManager()
+      const result = await creditManager.unlockContact(contactId, type, contactData)
       
-      // Add transaction record
-      const newTransaction: CreditTransaction = {
-        id: Date.now().toString(),
-        type,
-        credits_used: amount,
-        contact_id: contactId,
-        created_at: new Date().toISOString(),
+      if (result.success) {
+        // Update balance
+        if (result.new_balance !== undefined) {
+          setBalance(result.new_balance)
+        }
+        
+        // Refresh transactions
+        await fetchCreditData()
       }
       
-      setTransactions(prev => [newTransaction, ...prev])
-      
-      return { success: true }
+      return result
     } catch (error) {
-      console.error('Error deducting credits:', error)
-      return { success: false, error: 'Failed to deduct credits' }
+      console.error('Error unlocking contact:', error)
+      return { success: false, error: 'Failed to unlock contact' }
     }
+  }
+
+  const deductCredits = async (amount: number, type: string, contactId?: number) => {
+    // This is now handled by the unlockContact method
+    // Keeping for backward compatibility
+    return unlockContact(contactId?.toString() || '', type as 'email' | 'phone')
   }
 
   return {
     balance,
     transactions,
     loading,
-    deductCredits,
+    unlockContact,
+    deductCredits, // Deprecated, use unlockContact instead
     refetch: fetchCreditData,
   }
 }

@@ -1,5 +1,4 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { ServerCreditManager, CREDIT_COSTS, TRANSACTION_TYPES } from '../../../utils/credits/credit-manager.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,6 +26,22 @@ interface UnlockResponse {
   transaction_id?: string
   new_balance?: number
 }
+
+// Credit cost constants
+const CREDIT_COSTS = {
+  UNLOCK_EMAIL: 2,
+  UNLOCK_PHONE: 5,
+} as const
+
+// Transaction types
+const TRANSACTION_TYPES = {
+  UNLOCK_EMAIL: 'unlock_email',
+  UNLOCK_PHONE: 'unlock_phone',
+  PURCHASE: 'purchase',
+  REFUND: 'refund',
+  BONUS: 'bonus',
+  ADJUSTMENT: 'adjustment',
+} as const
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
@@ -88,11 +103,23 @@ Deno.serve(async (req: Request) => {
     const creditCost = type === 'email' ? CREDIT_COSTS.UNLOCK_EMAIL : CREDIT_COSTS.UNLOCK_PHONE
     const transactionType = type === 'email' ? TRANSACTION_TYPES.UNLOCK_EMAIL : TRANSACTION_TYPES.UNLOCK_PHONE
 
-    // Create credit manager
-    const creditManager = new ServerCreditManager(supabase)
-
     // Check if user has sufficient credits
-    const currentBalance = await creditManager.getCreditBalance(user.id)
+    const { data: currentBalanceData, error: balanceError } = await supabase.rpc('get_credit_balance', {
+      p_user_id: user.id
+    })
+
+    if (balanceError) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to get credit balance' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const currentBalance = currentBalanceData || 0
+
     if (currentBalance < creditCost) {
       return new Response(
         JSON.stringify({ 
@@ -109,7 +136,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Check if this contact data has already been unlocked by this user
-    const existingTransactions = await supabase
+    const { data: existingTransactions } = await supabase
       .from('credit_transactions')
       .select('id')
       .eq('user_id', user.id)
@@ -117,7 +144,7 @@ Deno.serve(async (req: Request) => {
       .eq('related_entity_id', contactId)
       .limit(1)
 
-    if (existingTransactions.data && existingTransactions.data.length > 0) {
+    if (existingTransactions && existingTransactions.length > 0) {
       // Already unlocked, return the data without charging again
       const unlockedData = generateUnlockedData(type, contactData)
       return new Response(
@@ -134,19 +161,19 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Deduct credits
-    const deductionResult = await creditManager.deductCredits(
-      user.id,
-      creditCost,
-      transactionType,
-      contactId
-    )
+    // Deduct credits using the database function
+    const { data: deductionResult, error: deductionError } = await supabase.rpc('deduct_credits', {
+      p_user_id: user.id,
+      p_amount: creditCost,
+      p_type: transactionType,
+      p_related_entity_id: contactId
+    })
 
-    if (!deductionResult.success) {
+    if (deductionError || !deductionResult?.success) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: deductionResult.error || 'Failed to deduct credits'
+          error: deductionResult?.error || deductionError?.message || 'Failed to deduct credits'
         }),
         { 
           status: 400, 

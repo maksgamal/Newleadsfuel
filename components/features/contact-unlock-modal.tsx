@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Phone, CreditCard, AlertTriangle } from 'lucide-react'
+import { Mail, Phone, CreditCard, AlertTriangle, CheckCircle } from 'lucide-react'
 
 interface Contact {
   id: number
@@ -40,7 +40,8 @@ export function ContactUnlockModal({
   onSuccess,
 }: ContactUnlockModalProps) {
   const [loading, setLoading] = useState(false)
-  const { balance, deductCredits } = useCredits()
+  const [error, setError] = useState('')
+  const { balance, unlockContact } = useCredits()
   
   const creditCost = type === 'email' ? 2 : type === 'phone' ? 5 : 0
   const hasEnoughCredits = balance >= creditCost
@@ -49,34 +50,42 @@ export function ContactUnlockModal({
     if (!contact || !type || !hasEnoughCredits) return
 
     setLoading(true)
+    setError('')
     
     try {
-      const result = await deductCredits(creditCost, `unlock_${type}`, contact.id)
-      
-      if (result.success) {
-        // Simulate unlocked data
-        const unlockedData = {
-          email: type === 'email' ? `${contact.name.toLowerCase().replace(' ', '.')}@${contact.company.toLowerCase().replace(' ', '')}.com` : undefined,
-          phone: type === 'phone' ? '+1 (555) 123-4567' : undefined,
+      const result = await unlockContact(
+        contact.id.toString(),
+        type,
+        {
+          name: contact.name,
+          company: contact.company,
+          title: contact.title
         }
-        
-        onSuccess(unlockedData)
+      )
+      
+      if (result.success && result.data) {
+        onSuccess(result.data)
         onClose()
       } else {
-        // Handle error
-        console.error('Failed to unlock contact')
+        setError(result.error || 'Failed to unlock contact')
       }
     } catch (error) {
       console.error('Error unlocking contact:', error)
+      setError('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleClose = () => {
+    setError('')
+    onClose()
+  }
+
   if (!contact || !type) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -107,7 +116,14 @@ export function ContactUnlockModal({
             </div>
           </div>
 
-          {!hasEnoughCredits && (
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {!hasEnoughCredits && !error && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -125,7 +141,7 @@ export function ContactUnlockModal({
         </div>
 
         <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
           <Button
