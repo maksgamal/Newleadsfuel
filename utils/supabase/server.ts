@@ -1,13 +1,14 @@
 import { auth } from '@clerk/nextjs/server'
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database.types'
 
 export async function createClerkSupabaseClientSsr() {
     // The `useAuth()` hook is used to access the `getToken()` method
     const { getToken } = await auth()
 
-    return createClient(
+    return createClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_KEY!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             global: {
                 // Get the custom Supabase token from Clerk

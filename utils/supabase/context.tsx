@@ -3,16 +3,17 @@
 import { useSession } from "@clerk/nextjs";
 import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import { createContext, useContext, useMemo, ReactNode } from "react";
+import type { Database } from '@/types/database.types'
 
-const SupabaseContext = createContext<SupabaseClient | undefined>(undefined);
+const SupabaseContext = createContext<SupabaseClient<Database> | undefined>(undefined);
 
 export function SupabaseProvider({ children }: { children: ReactNode }) {
     const { session } = useSession();
 
     const supabase = useMemo(() => {
-        return createClient(
+        return createClient<Database>(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_KEY!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 global: {
                     fetch: async (url, options = {}) => {

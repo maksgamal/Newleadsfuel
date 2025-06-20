@@ -36,8 +36,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Cursor MCP configuration (contains sensitive connection strings)
-.cursor/mcp.json
-
-# Implementation plan (internal document)
+# Cursor and AI tools
+cursor_metrics.md
+.cursor/
 implementation_plan.md
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db

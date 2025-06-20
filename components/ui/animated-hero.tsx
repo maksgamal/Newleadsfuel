@@ -3,10 +3,11 @@ import { motion } from 'framer-motion'
 import { MoveRight, PhoneCall } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
 
 function Hero() {
   const [titleNumber, setTitleNumber] = useState(0)
-  const titles = useMemo(() => ['Modern', 'Full-stack', 'Secure', 'Scalable', 'Powerful'], [])
+  const titles = useMemo(() => ['Modern', 'Powerful', 'Intelligent', 'Scalable', 'Efficient'], [])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -24,15 +25,10 @@ function Hero() {
       <div className="container mx-auto">
         <div className="flex flex-col items-center justify-center gap-8 py-20 lg:py-40">
           <div>
-            <a
-              href="https://codeguide.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-row items-center gap-2"
-            >
-              <Image src="/codeguide-logo.png" alt="CodeGuide" width={42} height={42} />
-              <span className="logo-text text-3xl font-bold">CodeGuide</span>
-            </a>
+            <div className="flex flex-row items-center gap-2">
+              <Image src="/codeguide-logo.png" alt="LeadFuel" width={42} height={42} />
+              <span className="logo-text text-3xl font-bold">LeadFuel</span>
+            </div>
           </div>
           <div className="flex flex-col gap-4">
             <h1 className="font-regular max-w-2xl text-center text-5xl tracking-tighter md:text-7xl">
@@ -60,19 +56,26 @@ function Hero() {
                   </motion.span>
                 ))}
               </span>
-              <span className="text-spektr-cyan-50">Starter Kit</span>
+              <span className="text-primary">B2B Lead Generation</span>
             </h1>
 
             <p className="max-w-2xl text-center text-lg leading-relaxed tracking-tight text-muted-foreground md:mt-8 md:text-xl">
-              Start building with a modern web application template featuring authentication,
-              database integration, and payment processing. Built with Next.js 14, Clerk, Supabase,
-              and Stripe to accelerate your development process.
+              Discover, enrich, and engage high-quality B2B leads with advanced filtering, 
+              real-time data enrichment, and seamless team collaboration. Built for sales teams, 
+              SDRs, and growth agencies.
             </p>
           </div>
           <div className="flex flex-row gap-3">
-            <Button size="lg" className="gap-4">
-              Get Started <MoveRight className="h-4 w-4" />
-            </Button>
+            <Link href="/sign-up">
+              <Button size="lg" className="gap-4">
+                Get Started Free <MoveRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/sign-in">
+              <Button variant="outline" size="lg" className="gap-4">
+                Sign In <PhoneCall className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
